@@ -20,7 +20,7 @@ def completion_with_backoff(llm, **kwargs):
 def create_report_for_batch(batch):
     print("Starting report creation for batch.")
 
-    llm = OpenAI(api_key="")
+    llm = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     model = os.getenv('OPENAI_MODEL', default="gpt-4o-mini")
 
     print(f"Requesting initial completion with batch data: {batch}")
