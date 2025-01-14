@@ -1,15 +1,17 @@
-import concurrent
-import concurrent.futures
+import json
 import os
-from concurrent.futures import ThreadPoolExecutor
-from datetime import timedelta, datetime
+import time
+import uuid
 
 import backoff
+import httpx
 import openai
 from openai import OpenAI
 
-from src.db import database
-from src.templates import TrendReportTemplate
+from db import database
+from llm import Gpt
+from schemas import TrendReportResponse
+from templates import TrendReportTemplate
 
 
 @backoff.on_exception(backoff.expo, openai.RateLimitError)
@@ -17,95 +19,85 @@ def completion_with_backoff(llm, **kwargs):
     return llm.chat.completions.create(**kwargs)
 
 
-def create_report_for_batch(batch):
-    print("Starting report creation for batch.")
+# def create_report_for_batch(batch):
+#     print("Starting report creation for batch.")
+#
+#     llm = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+#     model = os.getenv('OPENAI_MODEL', default="gpt-4o-mini")
+#
+#     print(f"Requesting initial completion with batch data: {batch}")
+#
+#     posts = " ".join([f"{n + 1}. {p.get('text')}\n" for n, p in enumerate(batch)])
+#
+#     try:
+#         response = completion_with_backoff(
+#             llm=llm,
+#             model=model,
+#             messages=[
+#                 {
+#                     "role": "user",
+#                     "content": TrendReportTemplate().create_template(posts),
+#                 },
+#             ],
+#         )
+#     except Exception as e:
+#         print("Failed during GPT call:", e)
+#         raise e
+#
+#     # Extract the response text
+#     return response.choices[0].message.content
 
-    llm = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    model = os.getenv('OPENAI_MODEL', default="gpt-4o-mini")
-
-    print(f"Requesting initial completion with batch data: {batch}")
-
-    posts = " ".join([f"{n + 1}. {p.get('text')}\n" for n, p in enumerate(batch)])
-
-    prompt = TrendReportTemplate().create_template(posts)
-    print(prompt)
-    try:
-        response = completion_with_backoff(
-            llm=llm,
-            model=model,
-            messages=[
-                {
-                    "role": "user",
-                    "content": TrendReportTemplate().create_template(posts),
-                },
-            ],
-        )
-    except Exception as e:
-        print("Failed during GPT call:", e)
-        raise e
-
-    # Extract the response text
-    report_text = response.choices[0].message.content
-    print("Received report text from GPT:")
-    print(report_text)
-
-
-def generate_profiles_report(posts: list[dict]) -> list[str]:
-    """
-    Method that creates a chain to output a profile report based on the scraped data.
-    :returns: list of reports
-    """
-
-    responses = []
-    input_var = [f"{p.get('content')} {p.get('link')} {p.get('name')} \n" for p in posts]
-
-    batch_size = 50
-
-    # create batches
-    batches = [
-        input_var[i: i + batch_size] for i in range(0, len(input_var), batch_size)
-    ]
-
-    with ThreadPoolExecutor(max_workers=12) as executor:
-        future_to_batch = {
-            executor.submit(create_report_for_batch, batch): batch
-            for batch in batches
-        }
-        for future in concurrent.futures.as_completed(future_to_batch):
-            batch_result = future.result()
-            responses.append(batch_result)
-
-    return responses
+    # print("Received report text from GPT:")
+    # print(report_text)
 
 
 def handler(event):
-    body = event.get("body", {})
+    body = json.loads(event.get("body", {}))
 
-    # for _ in range(4):
-    #     response = httpx.post(
-    #         "http://localhost:8083/.functions/function-crawler",
-    #         json={"link": "https://www.instagram.com/mcdonalds/"},
-    #         headers={"Content-Type": "application/json", "Correlation-ID": str(uuid.uuid4())},
-    #     )
+    correlation_ids = []
 
-    now = datetime.now()
-    posts = list(
-        database.profiles.find(
-            {
-                "date": {"$gte": (now - timedelta(days=7)), "$lte": now},
-            }
-        )
-    )
+    for link in body.get("links", []):
+        correlation_id = str(uuid.uuid4())
+        try:
+            response = httpx.post(
+                os.getenv("CRAWLER_URL"),
+                json={"link": link},
+                headers={"Content-Type": "application/json", "Correlation-ID": correlation_id},
+            )
+        except Exception as e:
+            continue
 
+        print(f"Started watching crawler with id: {correlation_id}")
+        correlation_ids.append(correlation_id)
+
+    while True:
+        finished = list(database.finished.find({"correlation_id": {"$in": correlation_ids}}))
+        for c in finished:
+            correlation_ids.remove(c.get("correlation_id"))
+
+        if not correlation_ids:
+            database.finished.delete_many({})
+            break
+
+        print(f"Still waiting for {len(correlation_ids)} crawlers to finish")
+        time.sleep(2)
+
+    posts = list(database.posts.find({}))
     print(f"Gathered {len(posts)} posts")
 
     if not posts:
         print("Cannot generate report, no new posts available")
         return
 
-    reports = generate_profiles_report(posts)
+    llm = Gpt(os.getenv('OPENAI_MODEL', default="gpt-4o-mini"))
+
+    response = llm.get_answer(
+        prompt=TrendReportTemplate(),
+        posts=posts,
+        formatted_instruction=TrendReportResponse,
+    )
 
     return {
         "statusCode": 200,
-        "body": f"Hello, scheduler! Welcome to Genezio Functions!"
+        "body": response
     }

@@ -1,21 +1,27 @@
+from typing import List
+
 from pydantic import BaseModel, Field
 
 
-class InformationProfiles(BaseModel):
-    name: str = Field(description='The name of the page from which the information is extracted.')
-    information: str = Field(description='The specific information extracted for the specified key.')
-    link: str = Field(description='The link to the post from where the information was extracted.')
-    city: str = Field(description='The city where the restaurant is located.')
+class TrendItem(BaseModel):
+    """
+    Represents one major trend, including the rationale (why)
+    and recommendation for action.
+    """
+    title: str = Field(..., description="Title or main focus of the trend")
+    why: str = Field(..., description="Explanation of why the trend matters")
+    recommendation: str = Field(..., description="Recommendation based on the trend")
 
 
-class FieldProfiles(BaseModel):
-    name: str = Field(
-        description='The name of the key. Categories always include: Giveaways, Deals and Discounts, Offers, Events.')
-    keys: list[InformationProfiles] = Field(
-        description='The list containing the restaurants and relevant information found.')
-
-
-class ReportProfiles(BaseModel):
-    name: str = Field(description='The name of the report, which is: RESTAURANT EVENTS REPORT')
-    fields: list[FieldProfiles] = Field(
-        description='The list containing all the keys with relevant information for this report.')
+class TrendReportResponse(BaseModel):
+    """
+    Overall report capturing multiple trends and a summary.
+    """
+    trends: List[TrendItem] = Field(
+        ...,
+        description="List of identified trends with their 'why' and 'recommendation' insights.",
+    )
+    summary_of_findings: str = Field(
+        ...,
+        description="Consolidated summary or conclusion derived from the trends."
+    )

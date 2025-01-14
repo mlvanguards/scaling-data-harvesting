@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 class BasePromptTemplate(ABC, BaseModel):
     @abstractmethod
-    def create_template(self, *args) -> str:
+    def create_template(self, *args, **kwargs) -> str:
         pass
 
 
@@ -40,5 +40,5 @@ class TrendReportTemplate(BasePromptTemplate):
     
     """
 
-    def create_template(self, posts: str) -> str:
+    def create_template(self, posts: str, *args, **kwargs) -> str:
         return self.prompt.format(posts=posts)

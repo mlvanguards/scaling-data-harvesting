@@ -33,3 +33,16 @@ backend:
       handler: handler
       # The entry point for the function.
       entry: scheduler.py
+
+frontend:
+  path: ./frontend
+  publish: dist
+  scripts:
+    # List of scripts to run before deploying the frontend.
+    deploy: npm install
+    # List of scripts that build your frontend before deployment. It should populate the specified `publish` directory.
+    build: npm run build
+    # List of scripts to run when starting the local development server.
+    start:
+      - npm install --silent
+      - npm run dev --silent
