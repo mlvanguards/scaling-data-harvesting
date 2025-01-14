@@ -6,7 +6,6 @@ import uuid
 import backoff
 import httpx
 import openai
-from openai import OpenAI
 
 from db import database
 from llm import Gpt
@@ -17,38 +16,6 @@ from templates import TrendReportTemplate
 @backoff.on_exception(backoff.expo, openai.RateLimitError)
 def completion_with_backoff(llm, **kwargs):
     return llm.chat.completions.create(**kwargs)
-
-
-# def create_report_for_batch(batch):
-#     print("Starting report creation for batch.")
-#
-#     llm = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-#     model = os.getenv('OPENAI_MODEL', default="gpt-4o-mini")
-#
-#     print(f"Requesting initial completion with batch data: {batch}")
-#
-#     posts = " ".join([f"{n + 1}. {p.get('text')}\n" for n, p in enumerate(batch)])
-#
-#     try:
-#         response = completion_with_backoff(
-#             llm=llm,
-#             model=model,
-#             messages=[
-#                 {
-#                     "role": "user",
-#                     "content": TrendReportTemplate().create_template(posts),
-#                 },
-#             ],
-#         )
-#     except Exception as e:
-#         print("Failed during GPT call:", e)
-#         raise e
-#
-#     # Extract the response text
-#     return response.choices[0].message.content
-
-    # print("Received report text from GPT:")
-    # print(report_text)
 
 
 def handler(event):
@@ -96,6 +63,8 @@ def handler(event):
         posts=posts,
         formatted_instruction=TrendReportResponse,
     )
+
+    print("Successfully generated report")
 
     return {
         "statusCode": 200,

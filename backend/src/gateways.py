@@ -26,7 +26,7 @@ class RapidGateway:
             "Accept": "application/json",
             "x-rapidapi-ua": "RapidAPI-Playground",
             "x-rapidapi-host": self._base_host,
-            "x-rapidapi-key": os.getenv("RAPID_API_KEY", "b54c0895c0mshb7fd796a26bb531p111313jsna3cea540f153")
+            "x-rapidapi-key": os.getenv("RAPID_API_KEY")
         }
 
         if headers:

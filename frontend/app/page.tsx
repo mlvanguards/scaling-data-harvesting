@@ -6,13 +6,68 @@ import { Textarea } from "@/components/ui/textarea";
 
 export default function Home() {
   const [urls, setUrls] = useState("");
-  const [generatedText, setGeneratedText] = useState("");
+  const [data, setData] = useState({ trends: [], summary_of_findings: "" });
+  const [loading, setLoading] = useState(false);
+
+  // const handleGenerate = async () => {
+  //   // This is a placeholder function. In a real application, you'd call an API here.
+  //   const urlList = urls.split("\n").filter((url) => url.trim() !== "");
+  //   const placeholderText = `Generated text based on ${urlList.length} LinkedIn URL(s)`;
+  //   setGeneratedText(placeholderText);
+  // };
+
+  type Trend = {
+    title: string;
+    why: string;
+    recommendation: string;
+  };
+
+  type InsightSectionProps = {
+    trends: Trend[];
+    summary: string;
+  };
+
+  const InsightSection: React.FC<InsightSectionProps> = ({ trends, summary }) => {
+    return (
+      <div style={{ padding: "20px", fontFamily: "Arial, sans-serif", lineHeight: 1.6 }}>
+        {trends.map((trend, index) => (
+            <div key={index} style={{marginBottom: "20px"}}>
+              <h2 style={{fontWeight: "bold"}}>{index + 1}. {trend.title}</h2>
+              <p><strong>Why:</strong> {trend.why}</p>
+              <p><strong>Recommendation:</strong> {trend.recommendation}</p>
+            </div>
+        ))}
+        <h3 style={{marginTop: "40px" , fontWeight: "bold"}}>Summary of Findings: </h3>
+        <p>{summary}</p>
+      </div>
+    );
+  };
+
+
 
   const handleGenerate = async () => {
-    // This is a placeholder function. In a real application, you'd call an API here.
-    const urlList = urls.split("\n").filter((url) => url.trim() !== "");
-    const placeholderText = `Generated text based on ${urlList.length} LinkedIn URL(s)`;
-    setGeneratedText(placeholderText);
+    setLoading(true);
+    try {
+      const response = await fetch("http://localhost:8083/.functions/function-scheduler", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({urls}),
+      });
+
+      if (!response.ok) {
+        throw new Error(response.statusText);
+      }
+
+      const result = await response.json();
+      console.log(result)
+      setData(result)
+    } catch (error) {
+      console.error("Error generating text:", error);
+    } finally {
+      setLoading(false); // End loading
+    }
   };
 
   return (
@@ -40,17 +95,32 @@ export default function Home() {
               />
               <Button
                 onClick={handleGenerate}
-                className="w-full bg-[#59359A] text-white font-semibold py-3 rounded-xl transition duration-200 transform hover:scale-105 "
+                disabled={loading} // Disable button while loading
+                className={`w-full text-white font-semibold py-3 rounded-xl transition duration-200 transform ${
+                  loading
+                    ? "bg-gray-500 cursor-not-allowed"
+                    : "bg-[#59359A] hover:scale-105"
+                }`}
               >
-                Generate Analysis
+                {loading ? (
+                  <div className="flex items-center justify-center">
+                    <span className="animate-spin mr-2 border-2 border-t-transparent border-white rounded-full w-4 h-4"></span>
+                    Loading...
+                  </div>
+                ) : (
+                  "Generate Analysis"
+                )}
               </Button>
-              {generatedText && (
+              {data && (
                 <div className="mt-8 p-4 bg-muted rounded-lg">
                   <h2 className="text-xl font-semibold mb-2 text-muted-white">
                     Trend Analysis:
                   </h2>
-                  <RawTextFormatter />
-                  <p className="text-foreground">{generatedText}</p>
+                  <InsightSection
+                    trends={data.trends}
+                    summary={data.summary_of_findings}
+                  />
+                  {/*<p className="text-foreground">{generatedText}</p>*/}
                 </div>
               )}
             </div>
