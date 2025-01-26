@@ -18,7 +18,7 @@ def handler(event):
 
     try:
         posts = [{
-            "text": clean_text(post.get("text")).strip(),
+            "text": post.get("text", "").strip(),
             "correlation_id": event.get('headers').get('correlation-id', ""),
             "urn": post.get("urn")
             } for post in client.list_posts(link)]

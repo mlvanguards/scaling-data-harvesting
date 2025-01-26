@@ -25,6 +25,7 @@ backend:
       entry: crawler.py
       # The maximum number of concurrent requests per instance.
       maxConcurrentRequestsPerInstance: 2
+      type: aws
     # The name (label) of the function.
     - name: scheduler
       # The path to the function's code.
@@ -33,10 +34,11 @@ backend:
       handler: handler
       # The entry point for the function.
       entry: scheduler.py
+      type: aws
 
 frontend:
   path: ./frontend
-  publish: dist
+  publish: out
   scripts:
     # List of scripts to run before deploying the frontend.
     deploy: npm install
@@ -46,3 +48,4 @@ frontend:
     start:
       - npm install --silent
       - npm run dev --silent
+  subdomain: pink-equivalent-cat
