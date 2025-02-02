@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from tenacity import stop_after_attempt, wait_random_exponential, retry
 from openai import OpenAI
 
-from templates import BasePromptTemplate
+from src.templates import BasePromptTemplate
 
 
 class LLMInterface(ABC):

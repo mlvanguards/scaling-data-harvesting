@@ -5,7 +5,7 @@ import httpx
 from httpx import ConnectTimeout, HTTPError
 from httpx._types import RequestFiles
 
-from errors import ExternalServiceAPIError
+from src.errors import ExternalServiceAPIError
 
 
 class RapidGateway:

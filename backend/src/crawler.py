@@ -1,8 +1,7 @@
 import json
 
-from db import database
-from gateways import RapidGateway
-from utils import clean_text
+from src.db import database
+from src.gateways import RapidGateway
 
 client = RapidGateway()
 

@@ -1,6 +1,6 @@
 import re
 
-from crawlers.base import BaseAbstractCrawler
+from src.crawlers.base import BaseAbstractCrawler
 
 
 class CrawlerDispatcher:

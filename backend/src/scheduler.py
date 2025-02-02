@@ -7,10 +7,10 @@ import backoff
 import httpx
 import openai
 
-from db import database
-from llm import Gpt
-from schemas import TrendReportResponse
-from templates import TrendReportTemplate
+from src.db import database
+from src.llm import Gpt
+from src.schemas import TrendReportResponse
+from src.templates import TrendReportTemplate
 
 
 @backoff.on_exception(backoff.expo, openai.RateLimitError)
