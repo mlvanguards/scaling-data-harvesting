@@ -48,4 +48,3 @@ frontend:
     start:
       - npm install --silent
       - npm run dev --silent
-  subdomain: pink-equivalent-cat

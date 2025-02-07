@@ -38,20 +38,28 @@ npm install
 
 ```bash
 cd backend
-poetry install
+poetry install --no-root
 poetry shell
 ```
 
 4. Create a `.env` file in the `backend` directory with the following variables:
+```.dotenv
+# Database
+DATABASE_URI=your_mongodb_connection_string  
+DATABASE_NAME=your_database_name 
 
-- DATABASE_URI=your_mongodb_connection_string  
-- DATABASE_NAME=your_database_name  
-- RAPID_API_KEY=your_rapidapi_key  
-- RAPID_API_ENDPOINT=your_rapidapi_endpoint  
-- OPENAI_API_KEY=your_openai_api_key  
-- OPENAI_MODEL=gpt-4-turbo-preview  
-- CRAWLER_URL=your_crawler_endpoint
+# Rapid API 
+RAPID_API_KEY=your_rapidapi_key  
+RAPID_API_ENDPOINT=your_rapidapi_endpoint  
 
+# Open API
+OPENAI_API_KEY=your_openai_api_key  
+OPENAI_MODEL=gpt-4-turbo-preview
+ 
+# You get this value after running `make local`in the Functions Deployed -> function-crawler, 
+# or when calling `make deploy` from genezio dashboard, this will require you to change the value in genezio environment variables
+CRAWLER_URL=your_crawler_endpoint
+```
 
 ## Running the Project Locally
 
